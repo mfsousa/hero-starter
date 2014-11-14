@@ -185,84 +185,13 @@ var moves = {
         var dangerHealth = 70;
         var safeHealth = 80;
 
-        //Get stats on the nearest health well
-        var healthWellStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function (boardTile) {
-            if (boardTile.type === 'HealthWell') {
-                return true;
-            }
-        });
+        var nextBasicMove = helpers.nextBasicMove(gameData, dangerHealth, safeHealth);
 
-        //Get stats of nearest non team diamond mine
-        var nonTeamDiamondMineStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function (boardTile) {
-            if (boardTile.type === 'DiamondMine') {
-                if (boardTile.owner) {
-                    return boardTile.owner.team !== hero.team;
-                } else {
-                    return true;
-                }
-            } else {
-                return false;
-            }
-        });
-
-        //Get stats of nearest enemy
-        var enemyStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function(boardTile) {
-            return boardTile.type === 'Hero' && boardTile.team !== hero.team;
-        });
-
-        //Get stats of nearest weaker enemy
-        var weakerEnemyStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function(boardTile) {
-            return boardTile.type === 'Hero' && boardTile.team !== hero.team && boardTile.health <= 30;
-        });
-
-        //Get stats of nearest weaker team member
-        var weakerTeamHeroStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function(boardTile) {
-            return boardTile.type === 'Hero' && boardTile.team === hero.team && boardTile.health <= 30;
-        });
-
-        //Get stats of nearest grave
-        var gravesStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function(boardTile) {
-            return boardTile.subType === 'Bones';
-        });
-
-
-
-        //Heal no matter what if low health
-        if (hero.health <= dangerHealth) {
-            return healthWellStats.direction;
+        if (helpers.howManyEnimiesOnArea(gameData, nextBasicMove, 2) >= 3) {
+            return helpers.findNearestWithLessEnimies(gameData);
         }
 
-        //Attack existent worth enemy
-        if (weakerEnemyStats.distance === 1) {
-            return weakerEnemyStats.direction;
-        }
-
-        //Going trough a needy team member: heal him!
-        if (weakerTeamHeroStats.distance === 1) {
-            return weakerTeamHeroStats.direction;
-        }
-
-        //Heal hero if is worth doing it now, although is not in a danger zone
-        if (hero.health <= safeHealth && healthWellStats.distance === 1) {
-            return healthWellStats.direction;
-        }
-
-        //Well... go just capture a diamond mine! If there is any
-        if (nonTeamDiamondMineStats.distance > 0) {
-            if (Math.floor((Math.random() * 100) + 1) > 90) {
-                return 'Stay';
-            }
-
-            return nonTeamDiamondMineStats.direction;
-        }
-
-        // Get me some bones!!
-        if (gravesStats.distance < enemyStats.distance) {
-            return gravesStats.direction;
-        }
-
-        // Just attack someone...
-        return enemyStats.direction;
+        return nextBasicMove.direction;
     }
 };
 

@@ -1,4 +1,5 @@
 var helpers = {};
+var visitedToCheck = {};
 
 // Returns false if the given coordinates are out of range
 helpers.validCoordinates = function(board, distanceFromTop, distanceFromLeft) {
@@ -52,6 +53,126 @@ helpers.shuffle = function(originalArray) {
   }
 
   return originalArray;
+};
+
+helpers.howManyEnimiesOnArea = function(gameData, fromTile, levels) {
+  var hero = gameData.activeHero;
+  var board = gameData.board;
+
+  var enimies = 0;
+
+  var dft = fromTile.distanceFromTop;
+  var dfl = fromTile.distanceFromLeft;
+
+  var directions = ['North', 'East', 'South', 'West'];
+  for (var i = 0; i < directions.length; i++) {
+    var direction = directions[i];
+    var nextTile = helpers.getTileNearby(board, dft, dfl, direction);
+    var key = nextTile.distanceFromTop + '|' + nextTile.distanceFromLeft;
+
+    if (!visitedToCheck.hasOwnProperty(key)) {
+
+      visitedToCheck[key] = true;
+
+      if (nextTile) {
+        if (nextTile.type === 'Hero' && nextTile.team !== hero.team) {
+          enimies++;
+        }
+
+        if (levels > 1) {
+          enimies += helpers.howManyEnimiesOnArea(gameData, nextTile, levels - 1);
+        }
+      }
+    }
+  }
+
+  return enimies;
+};
+
+helpers.nextBasicMove = function(gameData, dangerHealth, safeHealth) {
+  var hero = gameData.activeHero;
+  var board = gameData.board;
+
+
+  //Get stats on the nearest health well
+  var healthWellStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function (boardTile) {
+    if (boardTile.type === 'HealthWell') {
+      return true;
+    }
+  });
+
+  //Get stats of nearest non team diamond mine
+  var nonTeamDiamondMineStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function (boardTile) {
+    if (boardTile.type === 'DiamondMine') {
+      if (boardTile.owner) {
+        return boardTile.owner.team !== hero.team;
+      } else {
+        return true;
+      }
+    } else {
+      return false;
+    }
+  });
+
+  //Get stats of nearest enemy
+  var enemyStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function(boardTile) {
+    return boardTile.type === 'Hero' && boardTile.team !== hero.team;
+  });
+
+  //Get stats of nearest weaker enemy
+  var weakerEnemyStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function(boardTile) {
+    return boardTile.type === 'Hero' && boardTile.team !== hero.team && boardTile.health <= 30;
+  });
+
+  //Get stats of nearest weaker team member
+  var weakerTeamHeroStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function(boardTile) {
+    return boardTile.type === 'Hero' && boardTile.team === hero.team && boardTile.health <= 30;
+  });
+
+  //Get stats of nearest grave
+  var gravesStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function(boardTile) {
+    return boardTile.subType === 'Bones';
+  });
+
+
+
+  //Heal no matter what if low health
+  if (hero.health <= dangerHealth) {
+    return healthWellStats;
+  }
+
+  //Attack existent worth enemy
+  if (weakerEnemyStats.distance === 1) {
+    return weakerEnemyStats;
+  }
+
+  //Going trough a needy team member: heal him!
+  if (weakerTeamHeroStats.distance === 1) {
+    return weakerTeamHeroStats;
+  }
+
+  //Heal hero if is worth doing it now, although is not in a danger zone
+  if (hero.health <= safeHealth && healthWellStats.distance === 1) {
+    return healthWellStats;
+  }
+
+  //Well... go just capture a diamond mine! If there is any
+  if (nonTeamDiamondMineStats.distance > 0) {
+    if (Math.floor((Math.random() * 100) + 1) > 90) {
+      return hero;
+    }
+
+    return nonTeamDiamondMineStats;
+  }
+
+  // Get me some bones!!
+  if (gravesStats.distance < enemyStats.distance) {
+    return gravesStats;
+  }
+
+  // Just attack someone...
+  return enemyStats;
+
 };
 
 // Returns an object with certain properties of the nearest object we are looking for
@@ -205,8 +326,21 @@ helpers.findNearestUnownedDiamondMine = function(gameData) {
   return pathInfoObject.direction;
 };
 
-// Returns the nearest health well or false, if there are no health wells
-helpers.findNearestHealthWell = function(gameData) {
+
+helpers.findNearestWithLessEnimies = function(gameData) {
+  var hero = gameData.activeHero;
+  var board = gameData.board;
+
+  //Get the path info object
+  var pathInfoObject = helpers.findNearestObjectDirectionAndDistance(board, hero, function(fromTile) {
+    return fromTile.type === 'Unoccupied' && helpers.howManyEnimiesOnArea(gameData, fromTile, 2) < 1;
+  });
+
+  //Return the direction that needs to be taken to achieve the goal
+  return pathInfoObject.direction;
+};
+
+helpers.findNearestWithLessEnimies = function(gameData) {
   var hero = gameData.activeHero;
   var board = gameData.board;
 
