@@ -179,15 +179,10 @@ var moves = {
     },
 
     optimal: function (gameData, helpers) {
-        var hero = gameData.activeHero;
-        var board = gameData.board;
 
-        var dangerHealth = 70;
-        var safeHealth = 80;
+        var nextBasicMove = helpers.nextBasicMove(gameData);
 
-        var nextBasicMove = helpers.nextBasicMove(gameData, dangerHealth, safeHealth);
-
-        if (helpers.howManyEnimiesOnArea(gameData, nextBasicMove, 2) >= 3) {
+        if (helpers.howManyEnimiesOnArea(gameData, nextBasicMove, 2) >= 2) {
             return helpers.findNearestWithLessEnimies(gameData);
         }
 

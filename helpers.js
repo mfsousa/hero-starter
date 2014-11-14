@@ -89,10 +89,12 @@ helpers.howManyEnimiesOnArea = function(gameData, fromTile, levels) {
   return enimies;
 };
 
-helpers.nextBasicMove = function(gameData, dangerHealth, safeHealth) {
+helpers.nextBasicMove = function(gameData) {
   var hero = gameData.activeHero;
   var board = gameData.board;
 
+  var dangerHealth = 70;
+  var safeHealth = 80;
 
   //Get stats on the nearest health well
   var healthWellStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function (boardTile) {
