@@ -34,6 +34,26 @@ helpers.getTileNearby = function(board, distanceFromTop, distanceFromLeft, direc
   }
 };
 
+helpers.shuffle = function(originalArray) {
+  var counter = originalArray.length, temp, index;
+
+  // While there are elements in the array
+  while (counter > 0) {
+    // Pick a random index
+    index = Math.floor(Math.random() * counter);
+
+    // Decrease counter by 1
+    counter--;
+
+    // And swap the last element with it
+    temp = originalArray[counter];
+    originalArray[counter] = originalArray[index];
+    originalArray[index] = temp;
+  }
+
+  return originalArray;
+};
+
 // Returns an object with certain properties of the nearest object we are looking for
 helpers.findNearestObjectDirectionAndDistance = function(board, fromTile, tileCallback) {
   // Storage queue to keep track of places the fromTile has been
@@ -66,7 +86,7 @@ helpers.findNearestObjectDirectionAndDistance = function(board, fromTile, tileCa
     dfl = coords[1];
 
     // Loop through cardinal directions
-    var directions = ['North', 'East', 'South', 'West'];
+    var directions = helpers.shuffle(['North', 'East', 'South', 'West']);
     for (var i = 0; i < directions.length; i++) {
 
       // For each of the cardinal directions get the next tile...
