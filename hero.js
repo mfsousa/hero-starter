@@ -182,7 +182,7 @@ var moves = {
         var hero = gameData.activeHero;
         var board = gameData.board;
 
-        var dangerHealth = 60;
+        var dangerHealth = 70;
         var safeHealth = 80;
 
         //Get stats on the nearest health well
@@ -217,7 +217,7 @@ var moves = {
 
         //Get stats of nearest weaker team member
         var weakerTeamHeroStats = helpers.findNearestObjectDirectionAndDistance(board, hero, function(boardTile) {
-            return boardTile.type === 'Hero' && boardTile.team === hero.team && boardTile.health <= 60;
+            return boardTile.type === 'Hero' && boardTile.team === hero.team && boardTile.health <= 30;
         });
 
         //Get stats of nearest grave
@@ -249,6 +249,10 @@ var moves = {
 
         //Well... go just capture a diamond mine! If there is any
         if (nonTeamDiamondMineStats.distance > 0) {
+            if (Math.floor((Math.random() * 100) + 1) > 90) {
+                return 'Stay';
+            }
+
             return nonTeamDiamondMineStats.direction;
         }
 
